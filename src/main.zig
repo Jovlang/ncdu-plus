@@ -89,7 +89,7 @@ pub const config = struct {
     pub var scan_ui: ?enum { none, line, full } = null;
     pub var si: bool = false;
     pub var nc_tty: bool = false;
-    pub var ui_color: enum { off, dark, darkbg } = .off;
+    pub var ui_color: enum { off, dark, darkbg, modern } = .off;
     pub var thousands_sep: []const u8 = ",";
 
     pub var show_hidden: bool = true;
@@ -315,6 +315,7 @@ fn argConfig(args: *Args, opt: Args.Option, infile: bool) !void {
         if (std.mem.eql(u8, val, "off")) config.ui_color = .off
         else if (std.mem.eql(u8, val, "dark")) config.ui_color = .dark
         else if (std.mem.eql(u8, val, "dark-bg")) config.ui_color = .darkbg
+        else if (std.mem.eql(u8, val, "modern")) config.ui_color = .modern
         else try args.die("Unknown --color option: {s}.\n", .{val});
     } else if (opt.is("-t") or opt.is("--threads")) {
         const val = try args.arg();

@@ -45,7 +45,7 @@
 .Op Fl \-confirm\-quit , \-no\-confirm\-quit
 .Op Fl \-confirm\-delete , \-no\-confirm\-delete
 .Op Fl \-delete\-command Ar command
-.Op Fl \-color Ar off | dark | dark-bg
+.Op Fl \-color Ar off | dark | dark-bg | modern
 .Op Ar path
 .Nm
 .Op Fl h , \-help
@@ -385,17 +385,20 @@ interactive mode to prompt before each deletion:
 .Dl ncdu --no-confirm-delete --delete-command \[aq]rm -ri --\[aq]
 Or to move files to trash:
 .Dl ncdu --delete-command \[aq]gio trash --\[aq]
-.It Fl \-color Ar off | dark | dark-bg
+.It Fl \-color Ar off | dark | dark-bg | modern
 Set the color scheme.
 The following schemes are recognized:
 .Ar off
 to disable colors,
 .Ar dark
-for a color scheme intended for dark backgrounds and
+for a color scheme intended for dark backgrounds,
 .Ar dark\-bg
 for a variation of the
 .Ar dark
-color scheme that also works in terminals with a light background.
+color scheme that also works in terminals with a light background, and
+.Ar modern
+for a 256-color scheme using muted blues and grays, intended for terminals
+that support 256 colors.
 .Pp
 The default is
 .Ar off .
