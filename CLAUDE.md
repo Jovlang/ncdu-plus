@@ -64,6 +64,8 @@ Added three keybindings in `browser.zig`:
 - `f` — open selected item with system opener (`open` / `xdg-open`)
 - `H` — toggle hidden/excluded files (remapped from upstream's `e`)
 
+Added `--color modern` scheme (`src/ui.zig`, `src/main.zig`): a 256-color palette using muted blues and grays. Color scheme structs in `ui.zig` have an added `modern: StyleAttr` field alongside the existing `off`/`dark`/`darkbg` fields. The `config.ui_color` enum in `main.zig` has a corresponding `modern` variant.
+
 ## Notes
 
 - Zig version: 0.14 or 0.15 (see `build.zig.zon`)
