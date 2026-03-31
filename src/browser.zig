@@ -176,7 +176,7 @@ pub fn loadDir(next_sel: u64) void {
 
         ref = e.next;
         dir_loading += 1;
-        if ((dir_loading & 65) == 0)
+        if ((dir_loading & 63) == 0)
             main.handleEvent(false, false);
     }
     sortDir(next_sel);

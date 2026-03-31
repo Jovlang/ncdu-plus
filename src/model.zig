@@ -482,7 +482,7 @@ pub const inodes = struct {
             while (it.next()) |e| {
                 setStats(e.*, true);
                 add_done += 1;
-                if ((add_done & 65) == 0) main.handleEvent(false, false);
+                if ((add_done & 63) == 0) main.handleEvent(false, false);
             }
         } else {
             add_total = uncounted.count();
@@ -491,7 +491,7 @@ pub const inodes = struct {
             while (it.next()) |u| {
                 if (map.getKey(u.*)) |e| setStats(e, true);
                 add_done += 1;
-                if ((add_done & 65) == 0) main.handleEvent(false, false);
+                if ((add_done & 63) == 0) main.handleEvent(false, false);
             }
         }
         uncounted_full = false;

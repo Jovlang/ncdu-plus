@@ -115,6 +115,9 @@ pub const config = struct {
     pub var confirm_trash: bool = true;
     pub var ignore_delete_errors: bool = false;
     pub var delete_command: [:0]const u8 = "";
+    // Number of times -r/--read-only was given; the first disables delete,
+    // the second also disables shell access.
+    pub var readonly_count: u2 = 0;
 };
 
 pub var state: enum { scan, browse, refresh, shell, delete, editor, open_file } = .scan;
@@ -213,8 +216,11 @@ fn argConfig(args: *Args, opt: Args.Option, infile: bool) !void {
     else if (opt.is("--cross-file-system")) config.same_fs = false
     else if (opt.is("-e") or opt.is("--extended")) config.extended = true
     else if (opt.is("--no-extended")) config.extended = false
-    else if (opt.is("-r") and !(config.can_delete orelse true)) config.can_shell = false
-    else if (opt.is("-r")) config.can_delete = false
+    else if (opt.is("-r")) {
+        if (config.readonly_count == 0) config.can_delete = false
+        else if (config.readonly_count == 1) config.can_shell = false;
+        config.readonly_count +|= 1;
+    }
     else if (opt.is("--enable-shell")) config.can_shell = true
     else if (opt.is("--disable-shell")) config.can_shell = false
     else if (opt.is("--enable-delete")) config.can_delete = true

@@ -523,7 +523,7 @@ fn item(ctx: *Ctx, parent: ?*sink.Dir, dev: u64) void {
         if (isdir and ctx.p.elem(false)) ctx.p.die("unexpected contents in an excluded directory");
     }
 
-    if ((ctx.sink.files_seen.load(.monotonic) & 65) == 0)
+    if ((ctx.sink.files_seen.load(.monotonic) & 63) == 0)
         main.handleEvent(false, false);
 }
 

@@ -429,7 +429,7 @@ const Import = struct {
                 p.addStat(ctx.sink, ctx.fields.name, &ctx.stat);
         }
 
-        if ((ctx.sink.files_seen.load(.monotonic) & 65) == 0)
+        if ((ctx.sink.files_seen.load(.monotonic) & 63) == 0)
             main.handleEvent(false, false);
     }
 };
