@@ -7,11 +7,12 @@ SPDX-License-Identifier: MIT
 
 ## Fork changes
 
-This fork adds two key bindings and remaps one:
+This fork adds two key bindings, remaps one, and adds a color scheme:
 
 - `e` — open the selected item with `$EDITOR`
 - `f` — open the selected item with `open(1)`, falling back to `xdg-open`
 - `H` — show/hide hidden and excluded files (was `e` upstream)
+- `--color modern` — a 256-color scheme using muted blues and grays instead of the default cyan/green/yellow palette
 
 ## Description
 
