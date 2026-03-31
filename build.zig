@@ -3,6 +3,25 @@
 
 const std = @import("std");
 
+fn linkNcursesw(mod: *std.Build.Module, target: std.Build.ResolvedTarget) void {
+    if (target.result.os.tag == .linux) {
+        const candidates = [_][]const u8{
+            "/usr/lib/x86_64-linux-gnu/libncursesw.so.6",
+            "/usr/lib64/libncursesw.so.6",
+            "/usr/lib/libncursesw.so.6",
+        };
+
+        for (candidates) |candidate| {
+            std.fs.accessAbsolute(candidate, .{}) catch continue;
+            mod.addObjectFile(.{ .cwd_relative = candidate });
+            mod.linkSystemLibrary("tinfo", .{});
+            return;
+        }
+    }
+
+    mod.linkSystemLibrary("ncursesw", .{});
+}
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -17,7 +36,7 @@ pub fn build(b: *std.Build) void {
         .strip = strip,
         .link_libc = true,
     });
-    main_mod.linkSystemLibrary("ncursesw", .{});
+    linkNcursesw(main_mod, target);
     main_mod.linkSystemLibrary("zstd", .{});
 
     const exe = b.addExecutable(.{
