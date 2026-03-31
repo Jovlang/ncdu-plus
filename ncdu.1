@@ -501,6 +501,18 @@ Open the selected file or directory in
 .It f
 Open the selected file or directory with the system file opener
 .Pq Cm xdg-open No on Linux or Cm open No on macOS .
+.It y
+Copy the full path of the selected file or directory to the clipboard.
+Uses
+.Cm wl-copy
+on Wayland, or
+.Cm xclip
+on X11, falling back to
+.Cm xsel
+if
+.Cm xclip
+is not available.
+The copied path is shown in a message at the bottom of the screen.
 .It H
 Show/hide 'hidden' or 'excluded' files and directories.
 Be aware that even if you can't see the hidden files and directories, they are

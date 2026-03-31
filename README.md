@@ -13,6 +13,7 @@ This fork adds key bindings, remaps one, and adds a color scheme:
 - `D` — delete the selected item directly (was `d` upstream)
 - `e` — open the selected item with `$EDITOR`
 - `f` — open the selected item with `open(1)`, falling back to `xdg-open`
+- `y` — copy the selected item's path to the clipboard (via `wl-copy`, `xclip`, or `xsel`)
 - `H` — show/hide hidden and excluded files (was `e` upstream)
 - `--color modern` — a 256-color scheme using muted blues and grays instead of the default cyan/green/yellow palette
 

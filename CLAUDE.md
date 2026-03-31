@@ -64,6 +64,7 @@ Added/changed keybindings in `browser.zig`:
 - `D` — delete selected item directly (was upstream's `d`; confirm dialog says "Confirm delete")
 - `e` — open selected item in `$EDITOR`
 - `f` — open selected item with system opener (`open` / `xdg-open`)
+- `y` — copy selected item's full path to clipboard (`wl-copy` on Wayland, else `xclip -selection clipboard`, else `xsel --clipboard --input`); shows "Copied: <path>" message
 - `H` — toggle hidden/excluded files (remapped from upstream's `e`)
 
 Trash vs delete use separate "don't ask again" flags (`config.confirm_trash` / `config.confirm_delete`) so suppressing one confirmation does not affect the other. The `delete.trash_mode` bool in `delete.zig` controls which path `delete()` takes and which dialog wording is shown.
