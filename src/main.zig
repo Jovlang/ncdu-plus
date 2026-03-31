@@ -426,7 +426,7 @@ fn help() noreturn {
     \\  --confirm-quit             Ask confirmation before quitting ncdu
     \\  --no-confirm-delete        Don't ask confirmation before deletion
     \\  --delete-command CMD       Command to run for file deletion
-    \\  --color SCHEME             off / dark / dark-bg
+    \\  --color SCHEME             off / dark / dark-bg / modern
     \\
     \\Refer to `man ncdu` for more information.
     \\
