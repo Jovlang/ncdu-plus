@@ -29,6 +29,12 @@ pub fn setup(p: *model.Dir, e: *model.Entry, n: ?*model.Entry) void {
     confirm = .no;
 }
 
+fn updateParentSubErr(start: ?*model.Dir) void {
+    var it = start;
+    while (it) |d| : (it = d.parent)
+        d.updateSubErr();
+}
+
 
 // Returns true to abort scanning.
 fn err(e: anyerror) bool {
@@ -68,6 +74,7 @@ fn deleteItem(dir: std.fs.Dir, path: [:0]const u8, ptr: *align(1) ?*model.Entry)
     } else
         dir.deleteFileZ(path) catch |e| return err(e);
     ptr.*.?.zeroStats(parent);
+    updateParentSubErr(parent);
     ptr.* = ptr.*.?.next.ptr;
     return false;
 }
@@ -92,6 +99,7 @@ fn deleteCmd(path: [:0]const u8, ptr: *align(1) ?*model.Entry, cmd_str: []const 
         // 'FileNotFound', but w/e, let's just assume the item has been
         // deleted as expected.
         ptr.*.?.zeroStats(parent);
+        updateParentSubErr(parent);
         ptr.* = ptr.*.?.next.ptr;
         return true;
     };
@@ -112,6 +120,7 @@ fn deleteCmd(path: [:0]const u8, ptr: *align(1) ?*model.Entry, cmd_str: []const 
             }
             p.items +|= 1;
         }
+        updateParentSubErr(parent);
     }
 
     // If new entry is a dir, recursively scan.

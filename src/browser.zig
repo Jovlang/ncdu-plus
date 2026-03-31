@@ -407,6 +407,21 @@ var message: ?[]const [:0]const u8 = null;
 var clipboard_msg_buf: [std.fs.max_path_bytes + 10:0]u8 = undefined;
 var clipboard_msg_arr: [1][:0]const u8 = undefined;
 
+fn copyToClipboard(path: [:0]const u8, cmd: []const []const u8) bool {
+    var child = std.process.Child.init(cmd, main.allocator);
+    child.stdin_behavior = .Pipe;
+    child.stdout_behavior = .Ignore;
+    child.stderr_behavior = .Ignore;
+    child.spawn() catch return false;
+
+    _ = child.stdin.?.write(path) catch {};
+    child.stdin.?.close();
+    child.stdin = null;
+
+    const term = child.wait() catch return false;
+    return term == .Exited and term.Exited == 0;
+}
+
 const quit = struct {
     fn draw() void {
         const box = ui.Box.create(4, 22, "Confirm quit");
@@ -1035,40 +1050,15 @@ pub fn keyInput(ch: i32) void {
                 if (dir_items.items[cursor_idx]) |entry| {
                     const path = std.fs.path.joinZ(main.allocator, &.{ dir_path, entry.name() }) catch unreachable;
                     defer main.allocator.free(path);
-                    const cmd: []const []const u8 = blk: {
-                        if (std.posix.getenv("WAYLAND_DISPLAY") != null)
-                            break :blk &.{"wl-copy"}
-                        else
-                            break :blk &.{ "xclip", "-selection", "clipboard" };
-                    };
-                    var child = std.process.Child.init(cmd, main.allocator);
-                    child.stdin_behavior = .Pipe;
-                    child.stdout_behavior = .Ignore;
-                    child.stderr_behavior = .Ignore;
-                    if (child.spawn()) |_| {
-                        _ = child.stdin.?.write(path) catch {};
-                        child.stdin.?.close();
-                        child.stdin = null;
-                        _ = child.wait() catch {};
+                    const copied =
+                        (std.posix.getenv("WAYLAND_DISPLAY") != null and copyToClipboard(path, &.{"wl-copy"}))
+                        or copyToClipboard(path, &.{ "xclip", "-selection", "clipboard" })
+                        or copyToClipboard(path, &.{ "xsel", "--clipboard", "--input" });
+                    if (copied) {
                         clipboard_msg_arr[0] = std.fmt.bufPrintZ(&clipboard_msg_buf, "Copied: {s}", .{path}) catch path;
                         message = &clipboard_msg_arr;
-                    } else |_| {
-                        // wl-copy failed, try xsel
-                        const cmd2: []const []const u8 = &.{ "xsel", "--clipboard", "--input" };
-                        var child2 = std.process.Child.init(cmd2, main.allocator);
-                        child2.stdin_behavior = .Pipe;
-                        child2.stdout_behavior = .Ignore;
-                        child2.stderr_behavior = .Ignore;
-                        if (child2.spawn()) |_| {
-                            _ = child2.stdin.?.write(path) catch {};
-                            child2.stdin.?.close();
-                            child2.stdin = null;
-                            _ = child2.wait() catch {};
-                            clipboard_msg_arr[0] = std.fmt.bufPrintZ(&clipboard_msg_buf, "Copied: {s}", .{path}) catch path;
-                            message = &clipboard_msg_arr;
-                        } else |_| {
-                            message = &.{"No clipboard tool found (wl-copy/xclip/xsel)."};
-                        }
+                    } else {
+                        message = &.{"Clipboard copy failed (wl-copy/xclip/xsel)."};
                     }
                 }
             }

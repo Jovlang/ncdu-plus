@@ -619,10 +619,13 @@ pub fn main() void {
                 state = .browse;
             },
             .editor => {
-                const editor = std.posix.getenvZ("EDITOR").?;
+                const editor = std.posix.getenv("EDITOR").?;
                 var env = std.process.getEnvMap(allocator) catch unreachable;
                 defer env.deinit();
-                ui.runCmd(&.{ editor, browser.open_path }, browser.dir_path, &env, false);
+                env.put("NCDU_OPEN_PATH", browser.open_path) catch unreachable;
+                const cmd = std.fmt.allocPrint(allocator, "{s} \"$NCDU_OPEN_PATH\"", .{editor}) catch unreachable;
+                defer allocator.free(cmd);
+                ui.runCmd(&.{ "/bin/sh", "-c", cmd }, browser.dir_path, &env, false);
                 allocator.free(browser.open_path);
                 state = .browse;
             },
