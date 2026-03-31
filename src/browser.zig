@@ -684,7 +684,8 @@ const help = struct {
                   "s", "Sort by size (ascending/descending)",
                   "C", "Sort by items (ascending/descending)",
                   "M", "Sort by mtime (-e flag)",
-                  "d", "Delete selected file or directory",
+                  "d", "Send selected file or directory to trash",
+                  "D", "Delete selected file or directory",
                   "t", "Toggle dirs before files when sorting",
                   "g", "Show percentage and/or graph",
                   "u", "Show/hide hard link shared sizes",
@@ -977,7 +978,7 @@ pub fn keyInput(ch: i32) void {
             else
                 main.state = .shell;
         },
-        'd' => {
+        'd', 'D' => {
             if (dir_items.items.len == 0) {
             } else if (main.config.binreader)
                 message = &.{"File deletion is not available when reading from file."}
@@ -986,6 +987,7 @@ pub fn keyInput(ch: i32) void {
             else if (!main.config.can_delete.?)
                 message = &.{"File deletion is disabled."}
             else if (dir_items.items[cursor_idx]) |e| {
+                delete.trash_mode = (ch == 'd');
                 main.state = .delete;
                 const next =
                     if (cursor_idx+1 < dir_items.items.len) dir_items.items[cursor_idx+1]

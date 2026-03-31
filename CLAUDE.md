@@ -59,10 +59,14 @@ Transitions all go through `browse` as the hub state.
 
 ### This fork's changes vs upstream
 
-Added three keybindings in `browser.zig`:
+Added/changed keybindings in `browser.zig`:
+- `d` — send selected item to trash via `gio trash` (confirm dialog says "Confirm trash")
+- `D` — delete selected item directly (was upstream's `d`; confirm dialog says "Confirm delete")
 - `e` — open selected item in `$EDITOR`
 - `f` — open selected item with system opener (`open` / `xdg-open`)
 - `H` — toggle hidden/excluded files (remapped from upstream's `e`)
+
+Trash vs delete use separate "don't ask again" flags (`config.confirm_trash` / `config.confirm_delete`) so suppressing one confirmation does not affect the other. The `delete.trash_mode` bool in `delete.zig` controls which path `delete()` takes and which dialog wording is shown.
 
 Added `--color modern` scheme (`src/ui.zig`, `src/main.zig`): a 256-color palette using muted blues and grays. Color scheme structs in `ui.zig` have an added `modern: StyleAttr` field alongside the existing `off`/`dark`/`darkbg` fields. The `config.ui_color` enum in `main.zig` has a corresponding `modern` variant.
 

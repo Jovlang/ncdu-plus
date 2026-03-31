@@ -112,6 +112,7 @@ pub const config = struct {
     pub var can_refresh: ?bool = null;
     pub var confirm_quit: bool = false;
     pub var confirm_delete: bool = true;
+    pub var confirm_trash: bool = true;
     pub var ignore_delete_errors: bool = false;
     pub var delete_command: [:0]const u8 = "";
 };

@@ -357,9 +357,15 @@ Sort (or not) directories before files.
 Require a confirmation before quitting ncdu.
 Can be helpful when you accidentally press 'q' during or after a very long scan.
 .It Fl \-confirm\-delete , \-no\-confirm\-delete
-Require a confirmation before deleting a file or directory.
-Enabled by default, but can be disabled if you're absolutely sure you won't
-accidentally press 'd'.
+Require a confirmation before deleting or trashing a file or directory.
+Enabled by default.
+Note that the
+.Dq don't ask me again
+option in the confirmation dialog is tracked separately for trash
+.Pq d
+and delete
+.Pq D ,
+so suppressing one does not suppress the other.
 .It Fl \-delete\-command Ar command
 When set to a non-empty string, replace the built-in file deletion feature with
 a custom shell command.
@@ -462,6 +468,12 @@ Requires the
 .Fl e
 flag.
 .It d
+Send the selected file or directory to the system trash using
+.Xr gio 1 .
+A confirmation dialog is shown unless
+.Fl \-no\-confirm\-delete
+has been given.
+.It D
 Delete the selected file or directory.
 An error message will be shown when the contents of the directory do not match
 or do not exist anymore on the filesystem.

@@ -19,12 +19,13 @@ var state: enum { confirm, busy, err } = .confirm;
 var confirm: enum { yes, no, ignore } = .no;
 var error_option: enum { abort, ignore, all } = .abort;
 var error_code: anyerror = undefined;
+pub var trash_mode: bool = false;
 
 pub fn setup(p: *model.Dir, e: *model.Entry, n: ?*model.Entry) void {
     parent = p;
     entry = e;
     next_sel = n;
-    state = if (main.config.confirm_delete) .confirm else .busy;
+    state = if (if (trash_mode) main.config.confirm_trash else main.config.confirm_delete) .confirm else .busy;
     confirm = .no;
 }
 
@@ -72,7 +73,7 @@ fn deleteItem(dir: std.fs.Dir, path: [:0]const u8, ptr: *align(1) ?*model.Entry)
 }
 
 // Returns true if the item has been deleted successfully.
-fn deleteCmd(path: [:0]const u8, ptr: *align(1) ?*model.Entry) bool {
+fn deleteCmd(path: [:0]const u8, ptr: *align(1) ?*model.Entry, cmd_str: []const u8) bool {
     {
         var env = std.process.getEnvMap(main.allocator) catch unreachable;
         defer env.deinit();
@@ -81,7 +82,7 @@ fn deleteCmd(path: [:0]const u8, ptr: *align(1) ?*model.Entry) bool {
         // Since we're passing the path as an environment variable and go through
         // the shell anyway, we can refer to the variable and avoid error-prone
         // shell escaping.
-        const cmd = std.fmt.allocPrint(main.allocator, "{s} \"$NCDU_DELETE_PATH\"", .{main.config.delete_command}) catch unreachable;
+        const cmd = std.fmt.allocPrint(main.allocator, "{s} \"$NCDU_DELETE_PATH\"", .{cmd_str}) catch unreachable;
         defer main.allocator.free(cmd);
         ui.runCmd(&.{"/bin/sh", "-c", cmd}, null, &env, true);
     }
@@ -143,12 +144,16 @@ pub fn delete() ?*model.Entry {
         path.append(main.allocator, '/') catch unreachable;
     path.appendSlice(main.allocator, entry.name()) catch unreachable;
 
-    if (main.config.delete_command.len == 0) {
+    if (trash_mode) {
+        const isdel = deleteCmd(util.arrayListBufZ(&path, main.allocator), it, "gio trash");
+        model.inodes.addAllStats();
+        return if (isdel) next_sel else it.*;
+    } else if (main.config.delete_command.len == 0) {
         _ = deleteItem(std.fs.cwd(), util.arrayListBufZ(&path, main.allocator), it);
         model.inodes.addAllStats();
         return if (it.* == e) e else next_sel;
     } else {
-        const isdel = deleteCmd(util.arrayListBufZ(&path, main.allocator), it);
+        const isdel = deleteCmd(util.arrayListBufZ(&path, main.allocator), it, main.config.delete_command);
         model.inodes.addAllStats();
         return if (isdel) next_sel else it.*;
     }
@@ -156,9 +161,18 @@ pub fn delete() ?*model.Entry {
 
 fn drawConfirm() void {
     browser.draw();
-    const box = ui.Box.create(6, 60, "Confirm delete");
+    const title = if (trash_mode) "Confirm trash" else "Confirm delete";
+    const box = ui.Box.create(6, 60, title);
     box.move(1, 2);
-    if (main.config.delete_command.len == 0) {
+    if (trash_mode) {
+        ui.addstr("Are you sure you want to trash \"");
+        ui.addstr(ui.shorten(ui.toUtf8(entry.name()), 22));
+        ui.addch('"');
+        if (entry.pack.etype == .dir) {
+            box.move(2, 18);
+            ui.addstr("and all of its contents?");
+        } else ui.addch('?');
+    } else if (main.config.delete_command.len == 0) {
         ui.addstr("Are you sure you want to delete \"");
         ui.addstr(ui.shorten(ui.toUtf8(entry.name()), 21));
         ui.addch('"');
@@ -267,7 +281,8 @@ pub fn keyInput(ch: i32) void {
                 .yes => state = .busy,
                 .no => main.state = .browse,
                 .ignore => {
-                    main.config.confirm_delete = false;
+                    if (trash_mode) main.config.confirm_trash = false
+                    else main.config.confirm_delete = false;
                     state = .busy;
                 },
             },
