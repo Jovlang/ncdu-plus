@@ -7,8 +7,6 @@ SPDX-License-Identifier: MIT
 
 ## Fork changes
 
-This fork adds key bindings, remaps one, and adds a color scheme:
-
 - `d` — send the selected item to trash (via `gio trash`)
 - `D` — delete the selected item directly (was `d` upstream)
 - `e` — open the selected item with `$EDITOR`
