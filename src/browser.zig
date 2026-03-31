@@ -31,6 +31,9 @@ var dir_max_size: u64 = 0;
 var dir_has_shared: bool = false;
 var dir_loading: u64 = 0;
 
+// Path of the item to open with an external program; allocated and freed around .editor/.open_file state.
+pub var open_path: [:0]u8 = undefined;
+
 // Index into dir_items that is currently selected.
 var cursor_idx: usize = 0;
 
@@ -688,7 +691,9 @@ const help = struct {
                   "a", "Toggle between apparent size and disk usage",
                   "c", "Toggle display of child item counts",
                   "m", "Toggle display of latest mtime (-e flag)",
-                  "e", "Show/hide hidden or excluded files",
+                  "H", "Show/hide hidden or excluded files",
+                  "e", "Open selected item in $EDITOR",
+                  "f", "Open selected item with open/xdg-open",
                   "i", "Show information about selected item",
                   "r", "Recalculate the current directory",
                   "b", "Spawn shell in current directory",
@@ -995,10 +1000,30 @@ pub fn keyInput(ch: i32) void {
         's' => sortToggle(if (main.config.show_blocks) .blocks else .size, .desc),
         'C' => sortToggle(.items, .desc),
         'M' => if (main.config.extended) sortToggle(.mtime, .desc),
-        'e' => {
+        'H' => {
             main.config.show_hidden = !main.config.show_hidden;
             loadDir(0);
             state = .main;
+        },
+        'e' => {
+            if (dir_items.items.len > 0) {
+                if (dir_items.items[cursor_idx]) |entry| {
+                    if (std.posix.getenvZ("EDITOR") != null) {
+                        open_path = std.fs.path.joinZ(main.allocator, &.{ dir_path, entry.name() }) catch unreachable;
+                        main.state = .editor;
+                    } else {
+                        message = &.{"$EDITOR is not set."};
+                    }
+                }
+            }
+        },
+        'f' => {
+            if (dir_items.items.len > 0) {
+                if (dir_items.items[cursor_idx]) |entry| {
+                    open_path = std.fs.path.joinZ(main.allocator, &.{ dir_path, entry.name() }) catch unreachable;
+                    main.state = .open_file;
+                }
+            }
         },
         't' => {
             main.config.sort_dirsfirst = !main.config.sort_dirsfirst;

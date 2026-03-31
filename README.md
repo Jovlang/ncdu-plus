@@ -3,7 +3,15 @@ SPDX-FileCopyrightText: Yorhel <projects@yorhel.nl>
 SPDX-License-Identifier: MIT
 -->
 
-# ncdu-zig
+# ncdu-zig (fork)
+
+## Fork changes
+
+This fork adds two key bindings and remaps one:
+
+- `e` — open the selected item with `$EDITOR`
+- `f` — open the selected item with `open(1)`, falling back to `xdg-open`
+- `H` — show/hide hidden and excluded files (was `e` upstream)
 
 ## Description
 

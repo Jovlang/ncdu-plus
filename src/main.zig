@@ -116,7 +116,7 @@ pub const config = struct {
     pub var delete_command: [:0]const u8 = "";
 };
 
-pub var state: enum { scan, browse, refresh, shell, delete } = .scan;
+pub var state: enum { scan, browse, refresh, shell, delete, editor, open_file } = .scan;
 
 const stdin = if (@hasDecl(std.io, "getStdIn")) std.io.getStdIn() else std.fs.File.stdin();
 const stdout = if (@hasDecl(std.io, "getStdOut")) std.io.getStdOut() else std.fs.File.stdout();
@@ -610,6 +610,32 @@ pub fn main() void {
                 ui.runCmd(&.{shell}, browser.dir_path, &env, false);
                 state = .browse;
             },
+            .editor => {
+                const editor = std.posix.getenvZ("EDITOR").?;
+                var env = std.process.getEnvMap(allocator) catch unreachable;
+                defer env.deinit();
+                ui.runCmd(&.{ editor, browser.open_path }, browser.dir_path, &env, false);
+                allocator.free(browser.open_path);
+                state = .browse;
+            },
+            .open_file => {
+                var env = std.process.getEnvMap(allocator) catch unreachable;
+                defer env.deinit();
+                const opener = blk: {
+                    const path_env = std.posix.getenv("PATH") orelse break :blk "xdg-open";
+                    var it = std.mem.splitScalar(u8, path_env, ':');
+                    while (it.next()) |dir| {
+                        var buf: [std.fs.max_path_bytes]u8 = undefined;
+                        const full = std.fmt.bufPrint(&buf, "{s}/open", .{dir}) catch continue;
+                        std.fs.accessAbsolute(full, .{}) catch continue;
+                        break :blk @as([]const u8, "open");
+                    }
+                    break :blk @as([]const u8, "xdg-open");
+                };
+                ui.runCmd(&.{ opener, browser.open_path }, browser.dir_path, &env, false);
+                allocator.free(browser.open_path);
+                state = .browse;
+            },
             .delete => {
                 const next = delete.delete();
                 if (state != .refresh) {
@@ -635,7 +661,7 @@ pub fn handleEvent(block: bool, force_draw: bool) void {
             .scan, .refresh => sink.draw(),
             .browse => browser.draw(),
             .delete => delete.draw(),
-            .shell => unreachable,
+            .shell, .editor, .open_file => unreachable,
         }
         if (ui.inited) _ = c.refresh();
         event_delay_timer.reset();
@@ -654,7 +680,7 @@ pub fn handleEvent(block: bool, force_draw: bool) void {
             .scan, .refresh => sink.keyInput(ch),
             .browse => browser.keyInput(ch),
             .delete => delete.keyInput(ch),
-            .shell => unreachable,
+            .shell, .editor, .open_file => unreachable,
         }
         firstblock = false;
     }
