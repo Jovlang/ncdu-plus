@@ -414,7 +414,7 @@ fn copyToClipboard(path: [:0]const u8, cmd: []const []const u8) bool {
     child.stderr_behavior = .Ignore;
     child.spawn() catch return false;
 
-    _ = child.stdin.?.write(path) catch {};
+    child.stdin.?.writeAll(path) catch return false;
     child.stdin.?.close();
     child.stdin = null;
 

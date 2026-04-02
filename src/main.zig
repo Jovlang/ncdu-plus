@@ -643,7 +643,7 @@ pub fn main() void {
                     }
                     break :blk @as([]const u8, "xdg-open");
                 };
-                ui.runCmd(&.{ opener, browser.open_path }, browser.dir_path, &env, false);
+                ui.runCmd(&.{ opener, browser.open_path }, browser.dir_path, &env, true);
                 allocator.free(browser.open_path);
                 state = .browse;
             },
