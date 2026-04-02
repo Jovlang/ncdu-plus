@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Dependencies
+
+- Zig 0.14 or 0.15
+- `libncurses-dev` (Debian/Ubuntu) or equivalent (`ncurses-devel` on Fedora/RHEL)
+
 ## Commands
 
 ```bash

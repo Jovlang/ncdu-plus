@@ -31,8 +31,8 @@ C version (1.x).
 
 - Zig 0.14 or 0.15
 - Some sort of POSIX-like OS
-- ncurses
-- libzstd
+- ncurses (`libncurses-dev` on Debian/Ubuntu, `ncurses-devel` on Fedora/RHEL)
+- libzstd (`libzstd-dev` on Debian/Ubuntu, `libzstd-devel` on Fedora/RHEL)
 
 ## Install
 
