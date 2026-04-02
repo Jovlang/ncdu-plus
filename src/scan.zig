@@ -45,6 +45,18 @@ fn truncate(comptime T: type, comptime field: anytype, x: anytype) std.meta.fiel
     return util.castTruncate(std.meta.fieldInfo(T, field).type, x);
 }
 
+fn normalizeBlocks(size: u64, raw_blocks: model.Blocks, blk_size: u64) model.Blocks {
+    // Some filesystems (notably WSL's drvfs/9P for /mnt/c/) return garbage
+    // st_blocks values. Allow for normal filesystem slack before falling back
+    // to the apparent size.
+    const alloc_bytes = @as(u64, raw_blocks) *| 512;
+    const max_reasonable = @max(size, 1) +| (@max(blk_size, 4096) *| 2);
+    return if (alloc_bytes > max_reasonable)
+        @as(model.Blocks, @intCast((size +| 511) / 512))
+    else
+        raw_blocks;
+}
+
 
 pub fn statAt(parent: std.fs.Dir, name: [:0]const u8, follow: bool, symlink: ?*bool) !sink.Stat {
     // std.posix.fstatatZ() in Zig 0.14 is not suitable due to https://github.com/ziglang/zig/issues/23463
@@ -60,14 +72,8 @@ pub fn statAt(parent: std.fs.Dir, name: [:0]const u8, follow: bool, symlink: ?*b
     }
     if (symlink) |s| s.* = std.c.S.ISLNK(stat.mode);
     const size = clamp(sink.Stat, .size, stat.size);
-    // Some filesystems (notably WSL's drvfs/9P for /mnt/c/) return garbage
-    // st_blocks values. Sanity-check: if blocks * 512 exceeds size by an
-    // absurd margin, fall back to computing blocks from the apparent size.
     const raw_blocks = clamp(sink.Stat, .blocks, stat.blocks);
-    const blocks = if (@as(u64, raw_blocks) *| 512 > @max(size, 1) *| 1024)
-        @as(model.Blocks, @intCast((size +| 511) / 512))
-    else
-        raw_blocks;
+    const blocks = normalizeBlocks(size, raw_blocks, util.castClamp(u64, stat.blksize));
     return sink.Stat{
         .etype =
             if (std.c.S.ISDIR(stat.mode)) .dir
@@ -331,4 +337,16 @@ pub fn scan(path: [:0]const u8) !void {
     }
     state.threads[0].run();
     for (state.threads[1..]) |*t| t.thread.join();
+}
+
+test "normalizeBlocks keeps normal tiny-file allocation" {
+    try std.testing.expectEqual(@as(model.Blocks, 8), normalizeBlocks(1, 8, 4096));
+}
+
+test "normalizeBlocks keeps large filesystem block allocation" {
+    try std.testing.expectEqual(@as(model.Blocks, 128), normalizeBlocks(1, 128, 65536));
+}
+
+test "normalizeBlocks clamps absurd overreporting" {
+    try std.testing.expectEqual(@as(model.Blocks, 2), normalizeBlocks(1024, 1 << 20, 4096));
 }

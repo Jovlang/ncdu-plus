@@ -94,14 +94,14 @@ fn deleteCmd(path: [:0]const u8, ptr: *align(1) ?*model.Entry, cmd_str: []const 
         ui.runCmd(&.{"/bin/sh", "-c", cmd}, null, &env, true);
     }
 
-    const stat = scan.statAt(std.fs.cwd(), path, false, null) catch {
-        // Stat failed. Would be nice to display an error if it's not
-        // 'FileNotFound', but w/e, let's just assume the item has been
-        // deleted as expected.
-        ptr.*.?.zeroStats(parent);
-        updateParentSubErr(parent);
-        ptr.* = ptr.*.?.next.ptr;
-        return true;
+    const stat = scan.statAt(std.fs.cwd(), path, false, null) catch |e| switch (e) {
+        error.FileNotFound => {
+            ptr.*.?.zeroStats(parent);
+            updateParentSubErr(parent);
+            ptr.* = ptr.*.?.next.ptr;
+            return true;
+        },
+        else => return err(e),
     };
 
     // If either old or new entry is not a dir, remove & re-add entry in the in-memory tree.
