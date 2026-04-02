@@ -59,14 +59,23 @@ pub fn statAt(parent: std.fs.Dir, name: [:0]const u8, follow: bool, symlink: ?*b
         };
     }
     if (symlink) |s| s.* = std.c.S.ISLNK(stat.mode);
+    const size = clamp(sink.Stat, .size, stat.size);
+    // Some filesystems (notably WSL's drvfs/9P for /mnt/c/) return garbage
+    // st_blocks values. Sanity-check: if blocks * 512 exceeds size by an
+    // absurd margin, fall back to computing blocks from the apparent size.
+    const raw_blocks = clamp(sink.Stat, .blocks, stat.blocks);
+    const blocks = if (@as(u64, raw_blocks) *| 512 > @max(size, 1) *| 1024)
+        @as(model.Blocks, @intCast((size +| 511) / 512))
+    else
+        raw_blocks;
     return sink.Stat{
         .etype =
             if (std.c.S.ISDIR(stat.mode)) .dir
             else if (stat.nlink > 1) .link
             else if (!std.c.S.ISREG(stat.mode)) .nonreg
             else .reg,
-        .blocks = clamp(sink.Stat, .blocks, stat.blocks),
-        .size = clamp(sink.Stat, .size, stat.size),
+        .blocks = blocks,
+        .size = size,
         .dev = truncate(sink.Stat, .dev, stat.dev),
         .ino = truncate(sink.Stat, .ino, stat.ino),
         .nlink = clamp(sink.Stat, .nlink, stat.nlink),
