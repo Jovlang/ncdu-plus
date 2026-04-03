@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 # Optional semi-standard Makefile with some handy tools.
-# Ncdu itself can be built with just the zig build system.
+# ncdu-plus itself can be built with just the zig build system.
 
 ZIG ?= zig
 
@@ -29,27 +29,27 @@ install: install-bin install-doc
 
 install-bin: release
 	mkdir -p ${BINDIR}
-	install -m0755 zig-out/bin/ncdu ${BINDIR}/
+	install -m0755 zig-out/bin/ncdu-plus ${BINDIR}/
 
 install-doc:
 	mkdir -p ${MANDIR}
-	install -m0644 ncdu.1 ${MANDIR}/
+	install -m0644 ncdu-plus.1 ${MANDIR}/
 
 uninstall: uninstall-bin uninstall-doc
 
 # XXX: Ideally, these would also remove the directories created by 'install' if they are empty.
 uninstall-bin:
-	rm -f ${BINDIR}/ncdu
+	rm -f ${BINDIR}/ncdu-plus
 
 uninstall-doc:
-	rm -f ${MANDIR}/ncdu.1
+	rm -f ${MANDIR}/ncdu-plus.1
 
 dist:
-	rm -f ncdu-${NCDU_VERSION}.tar.gz
-	mkdir ncdu-${NCDU_VERSION}
-	for f in `git ls-files | grep -v ^\.gitignore`; do mkdir -p ncdu-${NCDU_VERSION}/`dirname $$f`; ln -s "`pwd`/$$f" ncdu-${NCDU_VERSION}/$$f; done
-	tar -cophzf ncdu-${NCDU_VERSION}.tar.gz --sort=name ncdu-${NCDU_VERSION}
-	rm -rf ncdu-${NCDU_VERSION}
+	rm -f ncdu-plus-${NCDU_VERSION}.tar.gz
+	mkdir ncdu-plus-${NCDU_VERSION}
+	for f in `git ls-files | grep -v ^\.gitignore`; do mkdir -p ncdu-plus-${NCDU_VERSION}/`dirname $$f`; ln -s "`pwd`/$$f" ncdu-plus-${NCDU_VERSION}/$$f; done
+	tar -cophzf ncdu-plus-${NCDU_VERSION}.tar.gz --sort=name ncdu-plus-${NCDU_VERSION}
+	rm -rf ncdu-plus-${NCDU_VERSION}
 
 
 # ASSUMPTION:
@@ -87,20 +87,20 @@ static-%.tar.gz:
 	@# My system's strip can't deal with arm binaries and zig doesn't wrap a strip alternative.
 	@# Whatever, just let it error for those.
 	strip -R .eh_frame -R .eh_frame_hdr static-$*/main || true
-	cd static-$* && mv main ncdu && tar -czf ../static-$*.tar.gz ncdu
+	cd static-$* && mv main ncdu-plus && tar -czf ../static-$*.tar.gz ncdu-plus
 	rm -rf static-$*
 
 static-linux-x86_64: static-x86_64-linux-musl.tar.gz
-	mv $< ncdu-${NCDU_VERSION}-linux-x86_64.tar.gz
+	mv $< ncdu-plus-${NCDU_VERSION}-linux-x86_64.tar.gz
 
 static-linux-x86: static-x86-linux-musl.tar.gz
-	mv $< ncdu-${NCDU_VERSION}-linux-x86.tar.gz
+	mv $< ncdu-plus-${NCDU_VERSION}-linux-x86.tar.gz
 
 static-linux-aarch64: static-aarch64-linux-musl.tar.gz
-	mv $< ncdu-${NCDU_VERSION}-linux-aarch64.tar.gz
+	mv $< ncdu-plus-${NCDU_VERSION}-linux-aarch64.tar.gz
 
 static-linux-arm: static-arm-linux-musleabi.tar.gz
-	mv $< ncdu-${NCDU_VERSION}-linux-arm.tar.gz
+	mv $< ncdu-plus-${NCDU_VERSION}-linux-arm.tar.gz
 
 static:\
 	static-linux-x86_64 \
@@ -110,5 +110,5 @@ static:\
 
 test:
 	zig build test
-	mandoc -T lint ncdu.1
+	mandoc -T lint ncdu-plus.1
 	reuse lint

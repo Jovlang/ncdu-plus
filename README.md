@@ -3,9 +3,11 @@ SPDX-FileCopyrightText: Yorhel <projects@yorhel.nl>
 SPDX-License-Identifier: MIT
 -->
 
-# ncdu-zig (fork)
+# ncdu-plus
 
 ## Fork changes
+
+`ncdu-plus` is a fork of the Zig-based `ncdu` implementation with extra desktop-oriented actions and UI tweaks.
 
 - `d` — send the selected item to trash (via `gio trash`)
 - `D` — delete the selected item directly (was `d` upstream)

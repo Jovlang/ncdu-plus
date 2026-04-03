@@ -24,7 +24,7 @@ make test
 
 # Run after debug build
 zig build run -- [args]
-# or: ./zig-out/bin/ncdu [args]
+# or: ./zig-out/bin/ncdu-plus [args]
 
 # Install
 sudo make install PREFIX=/usr
@@ -32,7 +32,7 @@ sudo make install PREFIX=/usr
 
 ## Architecture
 
-ncdu is a disk usage analyzer TUI written in Zig. The core pattern is **source → sink → model → browser**.
+ncdu-plus is a disk usage analyzer TUI written in Zig. The core pattern is **source → sink → model → browser**.
 
 ### Data flow
 

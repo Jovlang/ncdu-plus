@@ -142,7 +142,7 @@ pub const Writer = struct {
         var ctx = main.allocator.create(Writer) catch unreachable;
         ctx.* = .{ .fd = out };
         if (main.config.compress) ctx.zstd = ZstdWriter.create();
-        ctx.write("[1,2,{\"progname\":\"ncdu\",\"progver\":\"" ++ main.program_version ++ "\",\"timestamp\":");
+        ctx.write("[1,2,{\"progname\":\"ncdu-plus\",\"progver\":\"" ++ main.program_version ++ "\",\"timestamp\":");
         ctx.writeUint(@intCast(@max(0, std.time.timestamp())));
         ctx.writeByte('}');
         return ctx;

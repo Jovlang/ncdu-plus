@@ -1,11 +1,11 @@
 .\" SPDX-FileCopyrightText: Yorhel <projects@yorhel.nl>
 .\" SPDX-License-Identifier: MIT
 .Dd August 16, 2025
-.Dt NCDU 1
+.Dt NCDU-PLUS 1
 .Os
 .Sh NAME
-.Nm ncdu
-.Nd NCurses Disk Usage
+.Nm ncdu-plus
+.Nd NCurses Disk Usage Plus
 .
 .Sh SYNOPSIS
 .Nm
@@ -354,7 +354,7 @@ Enable (default) or disable natural sort when sorting by file name.
 .It Fl \-group\-directories\-first , \-no\-group\-directories\-first
 Sort (or not) directories before files.
 .It Fl \-confirm\-quit , \-no\-confirm\-quit
-Require a confirmation before quitting ncdu.
+Require a confirmation before quitting ncdu-plus.
 Can be helpful when you accidentally press 'q' during or after a very long scan.
 .It Fl \-confirm\-delete , \-no\-confirm\-delete
 Require a confirmation before deleting or trashing a file or directory.
@@ -372,12 +372,12 @@ a custom shell command.
 .Pp
 The absolute path of the item to be deleted is appended to the given command
 and the result is evaluated in a shell.
-The command is run from the same directory that ncdu itself was started in.
+The command is run from the same directory that ncdu-plus itself was started in.
 The
 .Ev NCDU_DELETE_PATH
 environment variable is set to the absolute path of the item to be deleted and
 .Ev NCDU_LEVEL
-is set in the same fashion as when spawning a shell from within ncdu.
+is set in the same fashion as when spawning a shell from within ncdu-plus.
 .Pp
 After command completion, the in-memory view of the selected item is refreshed
 and directory sizes are adjusted as necessary.
@@ -388,9 +388,9 @@ automatically picked up.
 For example, to use
 .Xr rm 1
 interactive mode to prompt before each deletion:
-.Dl ncdu --no-confirm-delete --delete-command \[aq]rm -ri --\[aq]
+.Dl ncdu-plus --no-confirm-delete --delete-command \[aq]rm -ri --\[aq]
 Or to move files to trash:
-.Dl ncdu --delete-command \[aq]gio trash --\[aq]
+.Dl ncdu-plus --delete-command \[aq]gio trash --\[aq]
 .It Fl \-color Ar off | dark | dark-bg | modern
 Set the color scheme.
 The following schemes are recognized:
@@ -413,9 +413,9 @@ The default is
 .Sh CONFIGURATION
 .Nm
 can be configured by placing command-line options in
-.Pa /etc/ncdu.conf
+.Pa /etc/ncdu-plus.conf
 or
-.Pa $HOME/.config/ncdu/config .
+.Pa $HOME/.config/ncdu-plus/config .
 If both files exist, the system configuration will be loaded before the user
 configuration, allowing users to override options set in the system
 configuration.
@@ -569,7 +569,7 @@ For example, to spawn the
 file manager instead of a shell, run
 .Nm
 as follows:
-.Dl NCDU_SHELL=vifm ncdu
+.Dl NCDU_SHELL=vifm ncdu-plus
 The
 .Ev NCDU_LEVEL
 environment variable is set or incremented before spawning the shell, allowing
@@ -608,17 +608,17 @@ Empty directory.
 .
 .Sh EXAMPLES
 To scan and browse the directory you're currently in, all you need is a simple:
-.Dl ncdu
+.Dl ncdu-plus
 To scan a full filesystem, for example your root filesystem, you'll want to use
 .Fl x :
-.Dl ncdu \-x /
+.Dl ncdu-plus \-x /
 .Pp
 Since scanning a large directory may take a while, you can scan a directory and
 export the results for later viewing:
 .Bd -literal -offset indent
-ncdu \-1xO export.ncdu /
+ncdu-plus \-1xO export.ncdu /
 # ...some time later:
-ncdu \-f export.ncdu
+ncdu-plus \-f export.ncdu
 .Ed
 To export from a cron job, make sure to replace
 .Fl 1
@@ -627,10 +627,10 @@ with
 to suppress unnecessary progress output.
 .Pp
 You can also export a directory and browse it once scanning is done:
-.Dl ncdu \-co\- | tee export.json.zst | ./ncdu \-f\-
+.Dl ncdu-plus \-co\- | tee export.json.zst | ./ncdu-plus \-f\-
 .Pp
 To scan a system remotely, but browse through the files locally:
-.Dl ssh user@system ncdu \-co\- / | ./ncdu \-f\-
+.Dl ssh user@system ncdu-plus \-co\- / | ./ncdu-plus \-f\-
 Remote scanning and local viewing has two major advantages when
 compared to running
 .Nm
@@ -664,11 +664,11 @@ The unique and shared directory sizes are calculated based on the assumption
 that the link count of hard links does not change during a filesystem scan or
 in between refreshes.
 If this does happen, for example when a hard link is deleted, then these
-numbers will be very much incorrect and a full refresh by restarting ncdu is
+numbers will be very much incorrect and a full refresh by restarting ncdu-plus is
 needed to get correct numbers again.
 .Pp
 All sizes are internally represented as a signed 64bit integer.
-If you have a directory larger than 8 EiB minus one byte, ncdu will clip its
+If you have a directory larger than 8 EiB minus one byte, ncdu-plus will clip its
 size to 8 EiB minus one byte.
 When deleting or refreshing items in a directory with a clipped size, the
 resulting sizes will be incorrect.

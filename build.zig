@@ -40,7 +40,7 @@ pub fn build(b: *std.Build) void {
     main_mod.linkSystemLibrary("zstd", .{});
 
     const exe = b.addExecutable(.{
-        .name = "ncdu",
+        .name = "ncdu-plus",
         .root_module = main_mod,
     });
     exe.pie = pie;

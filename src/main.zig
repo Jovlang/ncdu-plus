@@ -379,13 +379,13 @@ fn tryReadArgsFile(path: [:0]const u8) void {
 }
 
 fn version() noreturn {
-    stdout.writeAll("ncdu " ++ program_version ++ "\n") catch {};
+    stdout.writeAll("ncdu-plus " ++ program_version ++ "\n") catch {};
     std.process.exit(0);
 }
 
 fn help() noreturn {
     stdout.writeAll(
-    \\ncdu <options> <directory>
+    \\ncdu-plus <options> <directory>
     \\
     \\Mode selection:
     \\  -h, --help                 This help message
@@ -430,12 +430,12 @@ fn help() noreturn {
     \\  --sort COLUMN-(asc/desc)   disk-usage / name / apparent-size / itemcount / mtime
     \\  --enable-natsort           Use natural order when sorting by name
     \\  --group-directories-first  Sort directories before files
-    \\  --confirm-quit             Ask confirmation before quitting ncdu
+    \\  --confirm-quit             Ask confirmation before quitting ncdu-plus
     \\  --no-confirm-delete        Don't ask confirmation before deletion
     \\  --delete-command CMD       Command to run for file deletion
     \\  --color SCHEME             off / dark / dark-bg / modern
     \\
-    \\Refer to `man ncdu` for more information.
+    \\Refer to `man ncdu-plus` for more information.
     \\
     ) catch {};
     std.process.exit(0);
@@ -493,14 +493,14 @@ pub fn main() void {
     };
 
     if (loadConf) {
-        tryReadArgsFile("/etc/ncdu.conf");
+        tryReadArgsFile("/etc/ncdu-plus.conf");
 
         if (std.posix.getenvZ("XDG_CONFIG_HOME")) |p| {
-            const path = std.fs.path.joinZ(allocator, &.{p, "ncdu", "config"}) catch unreachable;
+            const path = std.fs.path.joinZ(allocator, &.{p, "ncdu-plus", "config"}) catch unreachable;
             defer allocator.free(path);
             tryReadArgsFile(path);
         } else if (std.posix.getenvZ("HOME")) |p| {
-            const path = std.fs.path.joinZ(allocator, &.{p, ".config", "ncdu", "config"}) catch unreachable;
+            const path = std.fs.path.joinZ(allocator, &.{p, ".config", "ncdu-plus", "config"}) catch unreachable;
             defer allocator.free(path);
             tryReadArgsFile(path);
         }
@@ -519,7 +519,7 @@ pub fn main() void {
         while (args.next() catch unreachable) |opt| {
             if (!opt.opt) {
                 // XXX: ncdu 1.x doesn't error, it just silently ignores all but the last argument.
-                if (scan_dir != null) ui.die("Multiple directories given, see ncdu -h for help.\n", .{});
+                if (scan_dir != null) ui.die("Multiple directories given, see ncdu-plus -h for help.\n", .{});
                 scan_dir = allocator.dupeZ(u8, opt.val) catch unreachable;
                 continue;
             }

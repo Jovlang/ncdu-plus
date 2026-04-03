@@ -864,7 +864,7 @@ const help = struct {
                   "I", "Show mediainfo for selected file",
                   "r", "Recalculate the current directory",
                   "b", "Spawn shell in current directory",
-                  "q", "Quit ncdu"
+                  "q", "Quit ncdu-plus"
     };
     const keylines = 10;
 
@@ -948,7 +948,7 @@ const help = struct {
     }
 
     fn draw() void {
-        const box = ui.Box.create(15, 60, "ncdu help");
+        const box = ui.Box.create(15, 60, "ncdu-plus help");
         box.tab(30, tab == .keys, 1, "Keys");
         box.tab(39, tab == .flags, 2, "Format");
         box.tab(50, tab == .about, 3, "About");
@@ -995,7 +995,7 @@ pub fn draw() void {
     ui.move(0,0);
     ui.hline(' ', ui.cols);
     ui.move(0,0);
-    ui.addstr("ncdu " ++ main.program_version ++ " ~ Use the arrow keys to navigate, press ");
+    ui.addstr("ncdu-plus " ++ main.program_version ++ " ~ Use the arrow keys to navigate, press ");
     ui.style(.key_hd);
     ui.addch('?');
     ui.style(.hd);
