@@ -521,6 +521,34 @@ If you suspect that the totals shown at the bottom of the screen are not
 correct, make sure you haven't enabled this option.
 .It i
 Show information about the current selected item.
+The
+.Dq Type
+field uses
+.Xr file 1
+to identify the file format (e.g.\&
+.Dq ELF 64-bit LSB executable
+or
+.Dq PNG image data ) ,
+falling back to a generic label if
+.Xr file 1
+is not available.
+.It I
+Open a scrollable pager showing
+.Xr mediainfo 1
+output for the selected file.
+Navigate with
+.Ic j Ns / Ns Ic k ,
+.Ic PgUp Ns / Ns Ic PgDn ,
+.Ic Home
+and
+.Ic End ;
+close with
+.Ic q
+or
+.Ic I .
+An error message is shown if
+.Xr mediainfo 1
+is not available.
 .It r
 Refresh/recalculate the current directory.
 .It b

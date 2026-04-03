@@ -13,6 +13,8 @@ SPDX-License-Identifier: MIT
 - `f` — open the selected item with `open(1)`, falling back to `xdg-open`
 - `y` — copy the selected item's path to the clipboard (via `wl-copy`, `xclip`, or `xsel`)
 - `H` — show/hide hidden and excluded files (was `e` upstream)
+- `i` — item info panel now shows a `file(1)` description in the Type row instead of the generic "File/Other" label
+- `I` — open a scrollable `mediainfo` pager for the selected file (`j`/`k`, PgUp/PgDn to scroll; `q` or `I` to close)
 - `--color modern` — a 256-color scheme using muted blues and grays instead of the default cyan/green/yellow palette
 
 ## Description
