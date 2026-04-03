@@ -416,8 +416,20 @@ fn captureCmd(argv: []const []const u8) ?[]u8 {
         _ = child.wait() catch {};
         return null;
     };
-    _ = child.wait() catch {};
+    const term = child.wait() catch {
+        main.allocator.free(out);
+        return null;
+    };
+    if (term != .Exited or term.Exited != 0) {
+        main.allocator.free(out);
+        return null;
+    }
     return out;
+}
+
+fn trimmedCmdOutput(raw: []const u8) ?[]const u8 {
+    const content = std.mem.trimRight(u8, raw, "\n\r");
+    return if (content.len == 0) null else content;
 }
 
 fn copyToClipboard(path: [:0]const u8, cmd: []const []const u8) bool {
@@ -736,8 +748,11 @@ const pager = struct {
     fn open(path: [:0]const u8) void {
         close();
         const raw = captureCmd(&.{ "mediainfo", path }) orelse return;
+        const content = trimmedCmdOutput(raw) orelse {
+            main.allocator.free(raw);
+            return;
+        };
         buf = raw;
-        const content = std.mem.trimRight(u8, raw, "\n\r");
         var count: usize = 0;
         var it = std.mem.splitScalar(u8, content, '\n');
         while (it.next()) |_| count += 1;
@@ -804,6 +819,24 @@ const pager = struct {
         }
     }
 };
+
+test "captureCmd returns stdout on successful exit" {
+    const out = captureCmd(&.{ "/bin/sh", "-c", "printf 'ok\\n'" }) orelse return error.TestUnexpectedResult;
+    defer main.allocator.free(out);
+    try std.testing.expectEqualStrings("ok\n", out);
+}
+
+test "captureCmd returns null on non-zero exit even with stdout" {
+    try std.testing.expect(captureCmd(&.{ "/bin/sh", "-c", "printf 'nope\\n'; exit 1" }) == null);
+}
+
+test "trimmedCmdOutput rejects empty command output" {
+    try std.testing.expect(trimmedCmdOutput("\n\r") == null);
+}
+
+test "trimmedCmdOutput keeps non-empty content" {
+    try std.testing.expectEqualStrings("line 1\nline 2", trimmedCmdOutput("line 1\nline 2\n") orelse return error.TestUnexpectedResult);
+}
 
 const help = struct {
     const keys = [_][:0]const u8{
