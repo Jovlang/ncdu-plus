@@ -402,10 +402,23 @@ const Row = struct {
     }
 };
 
-var state: enum { main, quit, help, info } = .main;
+var state: enum { main, quit, help, info, pager } = .main;
 var message: ?[]const [:0]const u8 = null;
 var clipboard_msg_buf: [std.fs.max_path_bytes + 10:0]u8 = undefined;
 var clipboard_msg_arr: [1][:0]const u8 = undefined;
+
+fn captureCmd(argv: []const []const u8) ?[]u8 {
+    var child = std.process.Child.init(argv, main.allocator);
+    child.stdout_behavior = .Pipe;
+    child.stderr_behavior = .Ignore;
+    child.spawn() catch return null;
+    const out = child.stdout.?.readToEndAlloc(main.allocator, 64 * 1024) catch {
+        _ = child.wait() catch {};
+        return null;
+    };
+    _ = child.wait() catch {};
+    return out;
+}
 
 fn copyToClipboard(path: [:0]const u8, cmd: []const []const u8) bool {
     var child = std.process.Child.init(cmd, main.allocator);
@@ -453,6 +466,7 @@ const info = struct {
     var links: ?std.ArrayListUnmanaged(*model.Link) = null;
     var links_top: usize = 0;
     var links_idx: usize = 0;
+    var file_output: ?[]u8 = null;
 
     fn lt(_: void, a: *model.Link, b: *model.Link) bool {
         const pa = a.path(false);
@@ -469,6 +483,8 @@ const info = struct {
             links = null;
             links_top = 0;
             links_idx = 0;
+            if (file_output) |s| main.allocator.free(s);
+            file_output = null;
         }
         entry = e;
         if (e == null) {
@@ -538,6 +554,33 @@ const info = struct {
         }
     }
 
+    fn drawTypeRow(box: ui.Box, row: *u32, cols: u32, e: *model.Entry) void {
+        box.move(row.*, 3);
+        ui.style(.bold);
+        ui.addstr("Type: ");
+        ui.style(.default);
+        if (e.pack.etype.isDirectory()) {
+            ui.addstr("Directory");
+        } else {
+            if (file_output == null) {
+                if (std.fs.path.joinZ(main.allocator, &.{ dir_path, e.name() })) |path| {
+                    defer main.allocator.free(path);
+                    file_output = captureCmd(&.{ "file", "--brief", path });
+                } else |_| {}
+            }
+            if (file_output) |out| {
+                const first_line = if (std.mem.indexOfScalar(u8, out, '\n')) |nl| out[0..nl] else std.mem.trimRight(u8, out, "\r\n");
+                _ = c.addnstr(first_line.ptr, @intCast(@min(first_line.len, @as(usize, cols -| 9))));
+            } else {
+                ui.addstr(switch (e.pack.etype) {
+                    .nonreg => "Other",
+                    else => "File",
+                });
+            }
+        }
+        row.* += 1;
+    }
+
     fn drawInfo(box: ui.Box, row: *u32, cols: u32, e: *model.Entry) void {
         // Name
         box.move(row.*, 3);
@@ -547,10 +590,10 @@ const info = struct {
         ui.addstr(ui.shorten(ui.toUtf8(e.name()), cols-11));
         row.* += 1;
 
-        // Type / Mode+UID+GID
-        box.move(row.*, 3);
-        ui.style(.bold);
+        // Mode+UID+GID
         if (e.ext()) |ext| {
+            box.move(row.*, 3);
+            ui.style(.bold);
             var buf: [32]u8 = undefined;
             if (ext.pack.hasmode) {
                 ui.addstr("Mode: ");
@@ -569,17 +612,11 @@ const info = struct {
                 ui.style(.default);
                 ui.addstr(std.fmt.bufPrintZ(&buf, "{d:<6}", .{ ext.gid }) catch unreachable);
             }
-        } else {
-            ui.addstr("Type: ");
-            ui.style(.default);
-            ui.addstr(switch (e.pack.etype) {
-                .dir => "Directory",
-                .nonreg => "Other",
-                .reg, .link => "File",
-                else => "Excluded",
-            });
+            row.* += 1;
         }
-        row.* += 1;
+
+        // Type
+        drawTypeRow(box, row, cols, e);
 
         // Last modified
         if (e.ext()) |ext| {
@@ -630,7 +667,7 @@ const info = struct {
         const rows = 5 // border + padding + close message
             + if (tab == .links and !main.config.binreader) 8 else
               4 // name + type + disk usage + apparent size
-            + (if (e.ext() != null) @as(u32, 1) else 0) // last modified
+            + (if (e.ext() != null) @as(u32, 2) else 0) // mode row + last modified
             + (if (e.link() != null) @as(u32, 1) else 0) // link count
             + (if (e.dir()) |d| 1 // sub items
                     + (if (d.shared_size > 0) @as(u32, 2) else 0)
@@ -691,6 +728,83 @@ const info = struct {
     }
 };
 
+const pager = struct {
+    var buf: ?[]u8 = null;
+    var lines: [][]const u8 = &.{};
+    var top: usize = 0;
+
+    fn open(path: [:0]const u8) void {
+        close();
+        const raw = captureCmd(&.{ "mediainfo", path }) orelse return;
+        buf = raw;
+        const content = std.mem.trimRight(u8, raw, "\n\r");
+        var count: usize = 0;
+        var it = std.mem.splitScalar(u8, content, '\n');
+        while (it.next()) |_| count += 1;
+        const arr = main.allocator.alloc([]const u8, count) catch {
+            main.allocator.free(raw);
+            buf = null;
+            return;
+        };
+        lines = arr;
+        var i: usize = 0;
+        it = std.mem.splitScalar(u8, content, '\n');
+        while (it.next()) |line| : (i += 1) arr[i] = line;
+        top = 0;
+        state = .pager;
+    }
+
+    fn close() void {
+        if (buf) |b| { main.allocator.free(b); buf = null; }
+        if (lines.len > 0) { main.allocator.free(lines); lines = &.{}; }
+        top = 0;
+    }
+
+    fn visibleRows() u32 {
+        return (@min(ui.rows, 40) -| 4);
+    }
+
+    fn draw() void {
+        const vis = visibleRows();
+        const h = vis + 4;
+        const w: u32 = @min(ui.cols -| 4, 80);
+        const box = ui.Box.create(h, w, "Media info");
+        for (0..vis) |i| {
+            const idx = top + i;
+            if (idx >= lines.len) break;
+            box.move(@as(u32, @intCast(i)) + 2, 2);
+            _ = c.addnstr(lines[idx].ptr, @intCast(@min(lines[idx].len, @as(usize, w -| 4))));
+        }
+        box.move(h - 2, w -| 28);
+        ui.addprint("{}/{}", .{ top + 1, lines.len });
+        box.move(h - 2, 2);
+        ui.style(.default);
+        ui.addstr("Press ");
+        ui.style(.key);
+        ui.addch('q');
+        ui.style(.default);
+        ui.addstr(" or ");
+        ui.style(.key);
+        ui.addch('I');
+        ui.style(.default);
+        ui.addstr(" to close");
+    }
+
+    fn keyInput(ch: i32) void {
+        const vis = visibleRows();
+        switch (ch) {
+            'q', 'I' => { close(); state = .main; },
+            'j', c.KEY_DOWN => { if (top + 1 < lines.len) top += 1; },
+            'k', c.KEY_UP => { if (top > 0) top -= 1; },
+            c.KEY_PPAGE => top = top -| vis,
+            c.KEY_NPAGE => top = @min(lines.len -| 1, top + vis),
+            c.KEY_HOME => top = 0,
+            c.KEY_END, c.KEY_LL => top = lines.len -| 1,
+            else => {},
+        }
+    }
+};
+
 const help = struct {
     const keys = [_][:0]const u8{
               "up, k", "Move cursor up",
@@ -714,6 +828,7 @@ const help = struct {
                   "f", "Open selected item with open/xdg-open",
                   "y", "Copy path to clipboard (wl-copy/xclip/xsel)",
                   "i", "Show information about selected item",
+                  "I", "Show mediainfo for selected file",
                   "r", "Recalculate the current directory",
                   "b", "Spawn shell in current directory",
                   "q", "Quit ncdu"
@@ -916,6 +1031,7 @@ pub fn draw() void {
         .quit => quit.draw(),
         .help => help.draw(),
         .info => info.draw(),
+        .pager => pager.draw(),
     }
     if (message) |m| {
         const box = ui.Box.create(@intCast(m.len + 5), 60, "Message");
@@ -971,12 +1087,26 @@ pub fn keyInput(ch: i32) void {
         .quit => return quit.keyInput(ch),
         .help => return help.keyInput(ch),
         .info => if (info.keyInput(ch)) return,
+        .pager => { pager.keyInput(ch); return; },
     }
 
     switch (ch) {
         'q' => if (main.config.confirm_quit) { state = .quit; } else ui.quit(),
         '?' => state = .help,
         'i' => if (dir_items.items.len > 0) info.set(dir_items.items[cursor_idx], .info),
+        'I' => {
+            if (dir_items.items.len > 0) {
+                if (dir_items.items[cursor_idx]) |entry| {
+                    if (entry.pack.etype != .dir) {
+                        const path = std.fs.path.joinZ(main.allocator, &.{ dir_path, entry.name() }) catch unreachable;
+                        defer main.allocator.free(path);
+                        pager.open(path);
+                        if (state != .pager)
+                            message = &.{"mediainfo is not available or returned no output."};
+                    }
+                }
+            }
+        },
         'r' => {
             if (main.config.binreader)
                 message = &.{"Refresh feature is not available when reading from file."}
