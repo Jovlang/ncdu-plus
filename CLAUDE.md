@@ -71,8 +71,12 @@ Added/changed keybindings in `browser.zig`:
 - `f` — open selected item with system opener (`open` / `xdg-open`)
 - `y` — copy selected item's full path to clipboard (`wl-copy` on Wayland, else `xclip -selection clipboard`, else `xsel --clipboard --input`); shows "Copied: <path>" message
 - `H` — toggle hidden/excluded files (remapped from upstream's `e`)
+- `i` — item info panel now shows a "Type:" row with `file(1)` output instead of the generic File/Other label; in `-e` mode the Type row is added below the Mode/UID/GID row
+- `I` — open a scrollable mediainfo pager for the selected file (`j`/`k`, PgUp/PgDn, Home/End to scroll; `q` or `I` to close); shows an error message if `mediainfo` is unavailable
 
 Trash vs delete use separate "don't ask again" flags (`config.confirm_trash` / `config.confirm_delete`) so suppressing one confirmation does not affect the other. The `delete.trash_mode` bool in `delete.zig` controls which path `delete()` takes and which dialog wording is shown.
+
+The `file(1)` output in the info panel is fetched lazily (on first open per entry) via `captureCmd` in `browser.zig`, which pipes stdout of a subprocess into an allocated buffer. The result is cached in `info.file_output` and freed when the cursor moves to a different entry. `pager` works the same way: `captureCmd` captures `mediainfo` output, which is split into lines and stored until the pager is closed.
 
 Added `--color modern` scheme (`src/ui.zig`, `src/main.zig`): a 256-color palette using muted blues and grays. Color scheme structs in `ui.zig` have an added `modern: StyleAttr` field alongside the existing `off`/`dark`/`darkbg` fields. The `config.ui_color` enum in `main.zig` has a corresponding `modern` variant.
 
