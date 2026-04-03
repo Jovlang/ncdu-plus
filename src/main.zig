@@ -510,7 +510,6 @@ pub fn main() void {
     var import_file: ?[:0]const u8 = null;
     var export_json: ?[:0]const u8 = null;
     var export_bin: ?[:0]const u8 = null;
-    var quit_after_scan = false;
     {
         const arglist = std.process.argsAlloc(allocator) catch unreachable;
         defer std.process.argsFree(allocator, arglist);
@@ -532,7 +531,6 @@ pub fn main() void {
             else if (opt.is("-f") and import_file != null) ui.die("The -f flag can only be given once.\n", .{})
             else if (opt.is("-f")) import_file = allocator.dupeZ(u8, args.arg() catch unreachable) catch unreachable
             else if (opt.is("--ignore-config")) {}
-            else if (opt.is("--quit-after-scan")) quit_after_scan = true // undocumented feature to help with benchmarking scan/import
             else if (argConfig(&args, opt, false)) |_| {}
             else |_| ui.die("Unrecognized option '{s}'.\n", .{opt.val});
         }
@@ -551,7 +549,7 @@ pub fn main() void {
             else config.scan_ui = .line;
         } else config.scan_ui = .full;
     }
-    if (!in_tty and import_file == null and export_json == null and export_bin == null and !quit_after_scan)
+    if (!in_tty and import_file == null and export_json == null and export_bin == null)
         ui.die("Standard input is not a TTY. Did you mean to import a file using '-f -'?\n", .{});
     config.nc_tty = !in_tty or (if (export_json orelse export_bin) |f| std.mem.eql(u8, f, "-") else false);
 
@@ -586,7 +584,7 @@ pub fn main() void {
             else |_| (scan_dir orelse ".");
         scan.scan(path) catch |e| ui.die("Error opening directory: {s}.\n", .{ui.errorString(e)});
     }
-    if (quit_after_scan or export_json != null or export_bin != null) return;
+    if (export_json != null or export_bin != null) return;
 
     config.can_shell = config.can_shell orelse !config.imported;
     config.can_delete = config.can_delete orelse !config.imported;
